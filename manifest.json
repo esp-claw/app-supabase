@@ -1,0 +1,14 @@
+{
+  "name": "sb",
+  "version": "1.0.0",
+  "description": "Read-only Supabase Management API: projects, service health, disk and API usage, branches and logs via the device's supabase_mgmt API profile.",
+  "permissions": {
+    "log": true,
+    "kv": true,
+    "http_profiles": ["supabase_mgmt"]
+  },
+  "limits": {
+    "memory_kb": 64,
+    "call_timeout_ms": 15000
+  }
+}
