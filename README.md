@@ -30,15 +30,33 @@ git clone --recursive https://github.com/esp-claw/app-supabase.git
 cd app-supabase && ./sdk/build-app.sh .
 ```
 
-The build needs clang with the wasm32 target and wasm-ld (Debian/Ubuntu: `apt install clang lld`). It writes `build/app.wasm` (about 19 KB) and `build/manifest.json` (64 KB memory, 15 s per call). CI builds every push and attaches both files to releases.
+The build needs clang with the wasm32 target and wasm-ld (Debian/Ubuntu: `apt install clang lld`). It writes `build/app.wasm` (about 19 KB) and `build/manifest.json` (64 KB memory, 15 s per call). CI builds every push, checks the manifest and the module with the SDK's `manifest_check.py` and `wasm_check.py`, and attaches both files to releases.
 
 ## Install
 
-Copy both files to `/apps/sb/` on the device, for example over WebDAV (`dav://<device>/dav/apps/sb/`). Then send `/apps reload sb` in Telegram, or restart the device.
+Install a signed release in Telegram (see [Releases](#releases)):
+
+```
+/app install https://github.com/esp-claw/app-supabase/releases/download/v1.0.0/sb-1.0.0.ecapp
+```
+
+The device must trust the esp-claw key: `app_trusted_keys` must contain `XHQYDdKaRZ6pNzXYcrGAB8bTyPa3D22NU+lVzAt2Acw=` (see [trusted keys](https://github.com/esp-claw/app-sdk#trusted-keys)). The device asks for confirmation before installing. To update, send `/app update sb <url of the newer .ecapp>`. `/app remove sb` deletes the app and its data.
+
+To test a local build, use a development device with `app_allow_unsigned` set to `true`. Copy `build/manifest.json` and `build/app.wasm` to `/apps/sb/`, for example over WebDAV (`dav://<device>/dav/apps/sb/`). Then send `/apps reload sb` in Telegram.
+
+## Releases
+
+Each release `v<version>` carries the signed package `sb-<version>.ecapp`, signed with the esp-claw key (key_id `7087d6a8`). It also carries the CI build it was made from (`app.wasm`, `manifest.json`). Install a release with:
+
+```
+/app install https://github.com/esp-claw/app-supabase/releases/download/v<version>/sb-<version>.ecapp
+```
+
+Maintainers: bump `version` in `manifest.json` and publish a release tagged `v<version>`. CI attaches the build. Then sign it locally and upload the `.ecapp`, as described in the [app-sdk release steps](https://github.com/esp-claw/app-sdk#releasing-an-app).
 
 ## Status
 
-Runtime v1 in [esp-claw/esp-claw](https://github.com/esp-claw/esp-claw). The app passes a host harness (WAMR with mocked host functions and hand-written fixtures) but has not run against the live API or on a device yet. Packages are not signed yet.
+Runtime v1 in [esp-claw/esp-claw](https://github.com/esp-claw/esp-claw). The app passes a host harness (WAMR with mocked host functions and hand-written fixtures) but has not run against the live API or on a device yet.
 
 Checked against the Management API OpenAPI spec (`api.supabase.com/api/v1-json`, October 2026), but not against the live API:
 - **Usage:** the Management API has no plan-quota or billing-usage endpoint. `sb_usage` reports disk utilization, disk config and API request counts instead. Database size would need SQL through `POST /v1/projects/{ref}/database/query`. The firmware would ask to confirm that POST, so the app does not use it.
